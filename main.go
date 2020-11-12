@@ -8,7 +8,7 @@ import (
 
 func main() {
 	myRouter := mux.NewRouter().StrictSlash(true)
-	deviceService := DeviceService{Database: &InMemoryDatabase{}}
+	deviceService := deviceHTTPHandler{service: deviceService{dao: &inMemoryDeviceDAO{}}}
 	myRouter.HandleFunc("/devices", deviceService.createDevice).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8000", myRouter))
 }

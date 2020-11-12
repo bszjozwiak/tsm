@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
-	"net/http"
+	"log"
 )
 
 type Device struct {
@@ -13,35 +12,30 @@ type Device struct {
 	Value    float32 `json:"value"`
 }
 
-type DeviceService struct {
-	Database
+type deviceDAO interface {
+	Save(device Device) (Device, error)
 }
 
-func (service *DeviceService) createDevice(w http.ResponseWriter, r *http.Request) {
-	var device Device
+type deviceService struct {
+	dao deviceDAO
+}
 
-	if err := json.NewDecoder(r.Body).Decode(&device); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func (s *deviceService) createDevice(device Device) (Device, error) {
+	if err := s.validate(device); err != nil {
+		return device, err
 	}
 
-	if err := service.validate(device); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	device, err := service.saveDevice(device)
+	savedDevice, err := s.dao.Save(device)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Print(err)
+		return device, errors.New("fail to save device")
 	}
 
-	if err := json.NewEncoder(w).Encode(device); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	return savedDevice, nil
 }
 
-func (service *DeviceService) validate(device Device) error {
-	if len(device.Name) == 0 {
+func (s *deviceService) validate(device Device) error {
+	if device.Name == "" {
 		return errors.New("device name can't be empty")
 	}
 
