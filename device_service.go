@@ -5,6 +5,12 @@ import (
 	"log"
 )
 
+const (
+	deviceCreated = iota
+	validationError
+	savingError
+)
+
 type Device struct {
 	Id       int     `json:"id"`
 	Name     string  `json:"name"`
@@ -16,25 +22,25 @@ type deviceDAO interface {
 	Save(device Device) (Device, error)
 }
 
-type deviceService struct {
+type DeviceService struct {
 	dao deviceDAO
 }
 
-func (s *deviceService) createDevice(device Device) (Device, error) {
+func (s *DeviceService) CreateDevice(device Device) (int, Device, error) {
 	if err := s.validate(device); err != nil {
-		return device, err
+		return validationError, device, err
 	}
 
 	savedDevice, err := s.dao.Save(device)
 	if err != nil {
 		log.Print(err)
-		return device, errors.New("fail to save device")
+		return savingError, device, errors.New("fail to save device")
 	}
 
-	return savedDevice, nil
+	return deviceCreated, savedDevice, nil
 }
 
-func (s *deviceService) validate(device Device) error {
+func (s *DeviceService) validate(device Device) error {
 	if device.Name == "" {
 		return errors.New("device name can't be empty")
 	}

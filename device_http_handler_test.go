@@ -14,7 +14,7 @@ func TestCreateValidDeviceWithNoDatabaseErrors(t *testing.T) {
 	body := strings.NewReader(`{"name":"test name2","interval":1}`)
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: deviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.createDevice(res, req)
 
@@ -22,7 +22,7 @@ func TestCreateValidDeviceWithNoDatabaseErrors(t *testing.T) {
 	responseBody, _ := ioutil.ReadAll(result.Body)
 	_ = result.Body.Close()
 
-	assert.Equal(t, http.StatusOK, result.StatusCode)
+	assert.Equal(t, http.StatusCreated, result.StatusCode)
 	assert.EqualValues(t, `{"id":0,"name":"test name2","interval":1,"value":0}`, strings.Trim(string(responseBody), "\n"), "")
 }
 
@@ -30,7 +30,7 @@ func TestCreateInvalidDevice(t *testing.T) {
 	body := strings.NewReader(`{"name":"test name2","interval":-1}`)
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: deviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.createDevice(res, req)
 
@@ -43,7 +43,7 @@ func TestCreateValidDeviceButErrorWhenSaveInDatabase(t *testing.T) {
 	body := strings.NewReader(`{"name":"test name2","interval":1}`)
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: deviceService{dao: &failingDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: DeviceService{dao: &failingDeviceDAO{}}}
 
 	underTest.createDevice(res, req)
 

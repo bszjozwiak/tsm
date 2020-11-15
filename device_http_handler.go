@@ -6,7 +6,7 @@ import (
 )
 
 type deviceHTTPHandler struct {
-	service deviceService
+	service DeviceService
 }
 
 func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request) {
@@ -17,18 +17,26 @@ func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	createdDevice, err := h.service.createDevice(requestDevice)
-	if err != nil {
-		code := http.StatusBadRequest
-		if err.Error() == "fail to save device" {
-			code = http.StatusInternalServerError
+	status, createdDevice, err := h.service.CreateDevice(requestDevice)
+	switch status {
+	case deviceCreated:
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(createdDevice); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+	case validationError:
+		http.Error(w, getErrorMessage(err), http.StatusBadRequest)
+	case savingError:
+		http.Error(w, getErrorMessage(err), http.StatusInternalServerError)
+	default:
+		//3BJO_TODO: Programming error. panic("not handled status") or log.Fatal("not handled status")
+	}
+}
 
-		http.Error(w, err.Error(), code)
-		return
+func getErrorMessage(err error) string {
+	if err != nil {
+		return err.Error()
 	}
 
-	if err := json.NewEncoder(w).Encode(createdDevice); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	return ""
 }
