@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	deviceCreated = iota
-	validationError
-	savingError
+	validationEmptyDeviceNameErr = "device name can't be empty"
+	validationWrongIntervalErr   = "interval has to be greater than 0"
+	savingErr                    = "fail to save device"
 )
 
 type Device struct {
@@ -26,27 +26,27 @@ type DeviceService struct {
 	dao deviceDAO
 }
 
-func (s *DeviceService) CreateDevice(device Device) (int, Device, error) {
+func (s *DeviceService) CreateDevice(device Device) (Device, error) {
 	if err := s.validate(device); err != nil {
-		return validationError, device, err
+		return device, err
 	}
 
 	savedDevice, err := s.dao.Save(device)
 	if err != nil {
 		log.Print(err)
-		return savingError, device, errors.New("fail to save device")
+		return device, errors.New(savingErr)
 	}
 
-	return deviceCreated, savedDevice, nil
+	return savedDevice, nil
 }
 
 func (s *DeviceService) validate(device Device) error {
 	if device.Name == "" {
-		return errors.New("device name can't be empty")
+		return errors.New(validationEmptyDeviceNameErr)
 	}
 
 	if device.Interval <= 0 {
-		return errors.New("interval has to be greater than 0")
+		return errors.New(validationWrongIntervalErr)
 	}
 
 	return nil

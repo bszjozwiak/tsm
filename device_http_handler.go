@@ -17,26 +17,22 @@ func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	status, createdDevice, err := h.service.CreateDevice(requestDevice)
-	switch status {
-	case deviceCreated:
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(createdDevice); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	case validationError:
-		http.Error(w, getErrorMessage(err), http.StatusBadRequest)
-	case savingError:
-		http.Error(w, getErrorMessage(err), http.StatusInternalServerError)
-	default:
-		//3BJO_TODO: Programming error. panic("not handled status") or log.Fatal("not handled status")
-	}
-}
-
-func getErrorMessage(err error) string {
+	createdDevice, err := h.service.CreateDevice(requestDevice)
 	if err != nil {
-		return err.Error()
+		switch err.Error() {
+		case validationEmptyDeviceNameErr, validationWrongIntervalErr:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case savingErr:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		default:
+			//3BJO_TODO: Programming error. panic("not handled status") or log.Fatal("not handled status")
+		}
+		return
 	}
 
-	return ""
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(createdDevice); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

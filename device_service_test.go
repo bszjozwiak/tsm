@@ -10,9 +10,8 @@ func TestCreateDeviceWithWrongInterval(t *testing.T) {
 
 	device := Device{Name: "name", Interval: 0, Value: 1}
 
-	status, _, err := underTest.CreateDevice(device)
+	_, err := underTest.CreateDevice(device)
 
-	assert.Equal(t, validationError, status)
 	assert.Error(t, err, "Device with Interval less than 1 isn't valid.")
 }
 
@@ -21,9 +20,8 @@ func TestCreateDeviceWithoutName(t *testing.T) {
 
 	device := Device{Interval: 1, Value: 1}
 
-	status, _, err := underTest.CreateDevice(device)
+	_, err := underTest.CreateDevice(device)
 
-	assert.Equal(t, validationError, status)
 	assert.Error(t, err, "Device without name isn't valid")
 }
 
@@ -32,9 +30,8 @@ func TestCreateDeviceWithCorrectData(t *testing.T) {
 
 	device := Device{Name: "name", Interval: 1, Value: 1}
 
-	status, _, err := underTest.CreateDevice(device)
+	_, err := underTest.CreateDevice(device)
 
-	assert.Equal(t, deviceCreated, status)
 	assert.NoError(t, err, "Device with correct data should be created")
 }
 
@@ -43,8 +40,7 @@ func TestCreateValidDeviceButErrorWhenSavingByDAO(t *testing.T) {
 
 	device := Device{Name: "name", Interval: 1, Value: 1}
 
-	status, _, err := underTest.CreateDevice(device)
+	_, err := underTest.CreateDevice(device)
 
-	assert.Equal(t, savingError, status)
 	assert.Error(t, err, "The error should be return when DAO fails")
 }
