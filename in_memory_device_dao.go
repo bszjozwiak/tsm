@@ -1,6 +1,9 @@
 package main
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 type inMemoryDeviceDAO struct {
 	mu      sync.Mutex
@@ -24,4 +27,26 @@ func (db *inMemoryDeviceDAO) GetByID(id int) (*Device, error) {
 	}
 
 	return nil, nil
+}
+
+func (db *inMemoryDeviceDAO) GetAll(limit int, page int) ([]Device, error) {
+	if limit < 0 {
+		return nil, errors.New("limit can't be negative")
+	}
+
+	if limit == 0 {
+		return append([]Device(nil), db.devices...), nil
+	}
+
+	start := limit * page
+	if start >= len(db.devices) {
+		return []Device{}, nil
+	}
+
+	end := start + limit
+	if end > len(db.devices) {
+		end = len(db.devices)
+	}
+
+	return append([]Device(nil), db.devices[start:end]...), nil
 }

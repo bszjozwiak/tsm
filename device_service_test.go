@@ -54,3 +54,13 @@ func TestGetByIDErrorInDAO(t *testing.T) {
 	assert.Error(t, err, "The error should be return when DAO fails")
 	assert.EqualError(t, err, daoGetErr)
 }
+
+func TestGetAllErrorInDAO(t *testing.T) {
+	underTest := DeviceService{dao: &failingDeviceDAO{}}
+
+	device, err := underTest.GetAll(0, 0)
+
+	assert.Nil(t, device, "Shouldn't return any device when error in DAO")
+	assert.Error(t, err, "The error should be return when DAO fails")
+	assert.EqualError(t, err, daoGetAllErr)
+}
