@@ -8,8 +8,8 @@ import (
 const (
 	validationEmptyDeviceNameErr = "device name can't be empty"
 	validationWrongIntervalErr   = "interval has to be greater than 0"
-	daoSaveErr                   = "fail to save device"
-	daoGetErr                    = "fail to get device"
+	daoSaveErr                   = "failed to save device"
+	daoGetErr                    = "failed to get device"
 )
 
 type Device struct {

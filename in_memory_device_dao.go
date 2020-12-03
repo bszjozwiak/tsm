@@ -18,9 +18,6 @@ func (db *inMemoryDeviceDAO) Save(device Device) (Device, error) {
 }
 
 func (db *inMemoryDeviceDAO) GetByID(id int) (*Device, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
 	if len(db.devices) > id {
 		device := db.devices[id]
 		return &device, nil
