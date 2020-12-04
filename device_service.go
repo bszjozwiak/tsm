@@ -8,7 +8,8 @@ import (
 const (
 	validationEmptyDeviceNameErr = "device name can't be empty"
 	validationWrongIntervalErr   = "interval has to be greater than 0"
-	savingErr                    = "fail to save device"
+	daoSaveErr                   = "failed to save device"
+	daoGetErr                    = "failed to get device"
 )
 
 type Device struct {
@@ -20,6 +21,7 @@ type Device struct {
 
 type deviceDAO interface {
 	Save(device Device) (Device, error)
+	GetByID(id int) (*Device, error)
 }
 
 type DeviceService struct {
@@ -34,7 +36,7 @@ func (s *DeviceService) CreateDevice(device Device) (Device, error) {
 	savedDevice, err := s.dao.Save(device)
 	if err != nil {
 		log.Print(err)
-		return device, errors.New(savingErr)
+		return device, errors.New(daoSaveErr)
 	}
 
 	return savedDevice, nil
@@ -50,4 +52,14 @@ func (s *DeviceService) validate(device Device) error {
 	}
 
 	return nil
+}
+
+func (s *DeviceService) GetByID(id int) (*Device, error) {
+	device, err := s.dao.GetByID(id)
+	if err != nil {
+		log.Print(err)
+		return nil, errors.New(daoGetErr)
+	}
+
+	return device, nil
 }
