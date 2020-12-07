@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -61,7 +62,9 @@ func TestInMemoryDeviceDAO_GetPaging(t *testing.T) {
 	underTest := inMemoryDeviceDAO{devices: append([]Device(nil), devices...)}
 
 	for _, testCase := range testCases {
-		result, _ := underTest.GetAll(testCase.limit, testCase.page)
-		assert.ElementsMatch(t, testCase.expected, result)
+		t.Run(fmt.Sprintf("limit:%v page:%v", testCase.limit, testCase.page), func(t *testing.T) {
+			result, _ := underTest.GetAll(testCase.limit, testCase.page)
+			assert.ElementsMatch(t, testCase.expected, result)
+		})
 	}
 }

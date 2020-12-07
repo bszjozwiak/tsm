@@ -108,15 +108,17 @@ func TestGetAllBadRequestParameters(t *testing.T) {
 
 	for param, values := range testCases {
 		for _, value := range values {
-			req := httptest.NewRequest(http.MethodGet, "/devices", nil)
-			query := req.URL.Query()
-			query.Add(param, value)
-			req.URL.RawQuery = query.Encode()
-			res := httptest.NewRecorder()
+			t.Run(fmt.Sprintf("%v %v", param, value), func(t *testing.T) {
+				req := httptest.NewRequest(http.MethodGet, "/devices", nil)
+				query := req.URL.Query()
+				query.Add(param, value)
+				req.URL.RawQuery = query.Encode()
+				res := httptest.NewRecorder()
 
-			underTest.getAll(res, req)
+				underTest.getAll(res, req)
 
-			assert.Equal(t, http.StatusBadRequest, res.Code)
+				assert.Equal(t, http.StatusBadRequest, res.Code)
+			})
 		}
 	}
 }
