@@ -16,7 +16,7 @@ func TestCreateValidDeviceWithNoDatabaseErrors(t *testing.T) {
 	body := strings.NewReader(`{"name":"test name2","interval":1}`)
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.createDevice(res, req)
 
@@ -28,7 +28,7 @@ func TestCreateInvalidDevice(t *testing.T) {
 	body := strings.NewReader(`{"name":"test name2","interval":-1}`)
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.createDevice(res, req)
 
@@ -39,7 +39,7 @@ func TestCreateValidDeviceButErrorWhenSaveInDatabase(t *testing.T) {
 	body := strings.NewReader(`{"name":"test name2","interval":1}`)
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &failingDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &failingDeviceDAO{}}}
 
 	underTest.createDevice(res, req)
 
@@ -49,7 +49,7 @@ func TestCreateValidDeviceButErrorWhenSaveInDatabase(t *testing.T) {
 func TestGetByIDStringPassedInsteadOfNumber(t *testing.T) {
 	req := createGetDeviceRequest("string")
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.getByID(res, req)
 
@@ -59,7 +59,7 @@ func TestGetByIDStringPassedInsteadOfNumber(t *testing.T) {
 func TestGetByIDDatabaseError(t *testing.T) {
 	req := createGetDeviceRequest("0")
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &failingDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &failingDeviceDAO{}}}
 
 	underTest.getByID(res, req)
 
@@ -69,7 +69,7 @@ func TestGetByIDDatabaseError(t *testing.T) {
 func TestGetByIdDeviceNotFound(t *testing.T) {
 	req := createGetDeviceRequest("0")
 	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.getByID(res, req)
 
@@ -82,7 +82,7 @@ func TestGetByIDDeviceExists(t *testing.T) {
 	device := Device{Id: 0, Name: "device", Interval: 1, Value: 1}
 	dao := inMemoryDeviceDAO{}
 	_, _ = dao.Save(device)
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &dao}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &dao}}
 
 	underTest.getByID(res, req)
 
@@ -104,7 +104,7 @@ func TestGetAllBadRequestParameters(t *testing.T) {
 		"limit": {"-1", "string"},
 	}
 
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	for param, values := range testCases {
 		for _, value := range values {
@@ -127,7 +127,7 @@ func TestGetAllDatabaseError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/devices", nil)
 	res := httptest.NewRecorder()
 
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &failingDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &failingDeviceDAO{}}}
 
 	underTest.getAll(res, req)
 
@@ -138,7 +138,7 @@ func TestGetAllNoDevicesReturnEmptyList(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/devices", nil)
 	res := httptest.NewRecorder()
 
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
 
 	underTest.getAll(res, req)
 
@@ -163,7 +163,7 @@ func TestGetAllReturnRequestedDevices(t *testing.T) {
 	req.URL.RawQuery = query.Encode()
 	res := httptest.NewRecorder()
 
-	underTest := deviceHTTPHandler{service: DeviceService{dao: &dao}}
+	underTest := deviceHTTPHandler{service: &DeviceService{dao: &dao}}
 
 	underTest.getAll(res, req)
 

@@ -17,7 +17,7 @@ type Device struct {
 	Id       int     `json:"id"`
 	Name     string  `json:"name"`
 	Interval int     `json:"interval"`
-	Value    float32 `json:"value"`
+	Value    float64 `json:"value"`
 }
 
 type deviceDAO interface {
@@ -26,8 +26,17 @@ type deviceDAO interface {
 	GetAll(limit int, page int) ([]Device, error)
 }
 
+type DeviceCreateObserver interface {
+	NotifyDeviceCreated(device Device)
+}
+
 type DeviceService struct {
-	dao deviceDAO
+	dao       deviceDAO
+	observers []DeviceCreateObserver
+}
+
+func (s *DeviceService) AddObserver(observer DeviceCreateObserver) {
+	s.observers = append(s.observers, observer)
 }
 
 func (s *DeviceService) CreateDevice(device Device) (Device, error) {
@@ -39,6 +48,10 @@ func (s *DeviceService) CreateDevice(device Device) (Device, error) {
 	if err != nil {
 		log.Print(err)
 		return device, errors.New(daoSaveErr)
+	}
+
+	for _, observer := range s.observers {
+		observer.NotifyDeviceCreated(savedDevice)
 	}
 
 	return savedDevice, nil

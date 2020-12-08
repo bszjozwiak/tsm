@@ -63,3 +63,27 @@ func TestGetAllErrorInDAO(t *testing.T) {
 	assert.Error(t, err, "The error should be return when DAO fails")
 	assert.EqualError(t, err, daoGetAllErr)
 }
+
+func TestDeviceService_CreateDevice_NotifyAllObservers(t *testing.T) {
+	firstObserver := deviceServiceObserver{}
+	secondObserver := deviceServiceObserver{}
+
+	underTest := DeviceService{dao: &inMemoryDeviceDAO{}}
+	underTest.AddObserver(&firstObserver)
+	underTest.AddObserver(&secondObserver)
+
+	device := Device{Name: "name", Interval: 1, Value: 1}
+
+	_, _ = underTest.CreateDevice(device)
+
+	assert.True(t, firstObserver.notified)
+	assert.True(t, secondObserver.notified)
+}
+
+type deviceServiceObserver struct {
+	notified bool
+}
+
+func (o *deviceServiceObserver) NotifyDeviceCreated(_ Device) {
+	o.notified = true
+}
