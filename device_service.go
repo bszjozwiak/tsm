@@ -10,6 +10,7 @@ const (
 	validationWrongIntervalErr   = "interval has to be greater than 0"
 	daoSaveErr                   = "failed to save device"
 	daoGetErr                    = "failed to get device"
+	daoGetAllErr                 = "failed to get all devices"
 )
 
 type Device struct {
@@ -22,6 +23,7 @@ type Device struct {
 type deviceDAO interface {
 	Save(device Device) (Device, error)
 	GetByID(id int) (*Device, error)
+	GetAll(limit int, page int) ([]Device, error)
 }
 
 type DeviceService struct {
@@ -62,4 +64,14 @@ func (s *DeviceService) GetByID(id int) (*Device, error) {
 	}
 
 	return device, nil
+}
+
+func (s *DeviceService) GetAll(limit int, page int) ([]Device, error) {
+	devices, err := s.dao.GetAll(limit, page)
+	if err != nil {
+		log.Print(err)
+		return nil, errors.New(daoGetAllErr)
+	}
+
+	return devices, nil
 }

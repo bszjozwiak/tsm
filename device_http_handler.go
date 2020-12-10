@@ -76,3 +76,43 @@ func (h *deviceHTTPHandler) getByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+func (h *deviceHTTPHandler) getAll(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+
+	limit, err := h.getValueOrDefault(params.Get("limit"), 100)
+	if err != nil || limit < 0 {
+		log.Print(err)
+		http.Error(w, "limit must be a number greater or equal to 0", http.StatusBadRequest)
+		return
+	}
+
+	page, err := h.getValueOrDefault(params.Get("page"), 0)
+	if err != nil || page < 0 {
+		log.Print(err)
+		http.Error(w, "page must be a number greater or equal to 0", http.StatusBadRequest)
+		return
+	}
+
+	devices, err := h.service.GetAll(limit, page)
+	if err != nil {
+		log.Print(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(devices); err != nil {
+		log.Print(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (h *deviceHTTPHandler) getValueOrDefault(param string, defVal int) (int, error) {
+	if param == "" {
+		return defVal, nil
+	}
+
+	return strconv.Atoi(param)
+}

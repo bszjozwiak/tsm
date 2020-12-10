@@ -12,6 +12,7 @@ func main() {
 	deviceService := deviceHTTPHandler{service: DeviceService{dao: &inMemoryDeviceDAO{}}}
 	myRouter.HandleFunc("/devices", deviceService.createDevice).Methods(http.MethodPost)
 	myRouter.HandleFunc("/devices/{id}", deviceService.getByID).Methods(http.MethodGet)
+	myRouter.HandleFunc("/devices", deviceService.getAll).Methods(http.MethodGet)
 	log.Fatal(http.ListenAndServe(getAddr(), myRouter))
 }
 
