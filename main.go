@@ -20,6 +20,7 @@ func main() {
 	myRouter.HandleFunc("/start", tickerHandler.Start).Methods(http.MethodPost)
 	myRouter.HandleFunc("/stop", tickerHandler.Stop).Methods(http.MethodPost)
 
+	log.Printf("tsm started and listening on %v", getAddr())
 	log.Fatal(http.ListenAndServe(getAddr(), myRouter))
 }
 

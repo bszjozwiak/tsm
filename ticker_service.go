@@ -7,9 +7,12 @@ import (
 	"time"
 )
 
+type tickerFactory func(d time.Duration) <-chan time.Time
+
 type TickerService struct {
 	mu           sync.Mutex
 	ds           *DeviceService
+	tf           tickerFactory
 	measurements chan<- Measurement
 	stop         chan bool
 	isRunning    bool
@@ -26,6 +29,7 @@ func (ts *TickerService) Start() error {
 
 	devices, err := ts.ds.GetAll(0, 0)
 	if err != nil {
+		log.Print(err)
 		return errors.New("failed to start measurements sending")
 	}
 
@@ -33,7 +37,7 @@ func (ts *TickerService) Start() error {
 	ts.isRunning = true
 
 	for _, device := range devices {
-		ts.createTickerForDevice(device)
+		go ts.createTickerForDevice(device)
 	}
 
 	return nil
@@ -59,24 +63,23 @@ func (ts *TickerService) NotifyDeviceCreated(device Device) {
 		return
 	}
 
-	ts.createTickerForDevice(device)
+	go ts.createTickerForDevice(device)
 }
 
 func (ts *TickerService) createTickerForDevice(device Device) {
-	ticker := time.NewTicker(time.Second * time.Duration(device.Interval))
+	sendTrigger := ts.tf(time.Second * time.Duration(device.Interval))
 
-	go func(ticker *time.Ticker, deviceId int, value float64) {
+	func(notifyTime <-chan time.Time, deviceId int, value float64) {
 		defer log.Printf("ticker for device %v stopped", deviceId)
-		defer ticker.Stop()
 
 		for {
 			select {
-			case <-ticker.C:
+			case <-notifyTime:
 				ts.measurements <- Measurement{Id: deviceId, Value: value}
 			case <-ts.stop:
 				log.Printf("measurements sending from device %v stopped", deviceId)
 				return
 			}
 		}
-	}(ticker, device.Id, device.Value)
+	}(sendTrigger, device.Id, device.Value)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 )
 
 type tickerHTTPHandler struct {
@@ -14,7 +15,7 @@ type tickerHTTPHandler struct {
 func newTickerHTTPHandler(ds *DeviceService) tickerHTTPHandler {
 	measurements := make(chan Measurement, 10)
 
-	ts := TickerService{ds: ds, measurements: measurements}
+	ts := TickerService{ds: ds, measurements: measurements, tf: time.Tick}
 	ds.AddObserver(&ts)
 
 	mw := MeasurementsWriter{measurements: measurements}
@@ -26,6 +27,7 @@ func (h *tickerHTTPHandler) Start(w http.ResponseWriter, _ *http.Request) {
 	if err := h.ts.Start(); err != nil {
 		log.Print(err)
 		http.Error(w, "failed to start ticker", http.StatusInternalServerError)
+		return
 	}
 
 	h.mw.Start()
