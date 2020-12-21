@@ -37,7 +37,9 @@ func (ts *TickerService) Start() error {
 	ts.isRunning = true
 
 	for _, device := range devices {
-		go ts.createTickerForDevice(device)
+		go func(d Device) {
+			ts.createTickerForDevice(d)
+		}(device)
 	}
 
 	return nil
@@ -68,18 +70,15 @@ func (ts *TickerService) NotifyDeviceCreated(device Device) {
 
 func (ts *TickerService) createTickerForDevice(device Device) {
 	sendTrigger := ts.tf(time.Second * time.Duration(device.Interval))
+	defer log.Printf("ticker for device %v stopped", device.Id)
 
-	func(notifyTime <-chan time.Time, deviceId int, value float64) {
-		defer log.Printf("ticker for device %v stopped", deviceId)
-
-		for {
-			select {
-			case <-notifyTime:
-				ts.measurements <- Measurement{Id: deviceId, Value: value}
-			case <-ts.stop:
-				log.Printf("measurements sending from device %v stopped", deviceId)
-				return
-			}
+	for {
+		select {
+		case <-sendTrigger:
+			ts.measurements <- Measurement{Id: device.Id, Value: device.Value}
+		case <-ts.stop:
+			log.Printf("measurements sending from device %v stopped", device.Id)
+			return
 		}
-	}(sendTrigger, device.Id, device.Value)
+	}
 }
