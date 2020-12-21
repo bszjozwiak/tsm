@@ -10,7 +10,7 @@ import (
 )
 
 type deviceHTTPHandler struct {
-	service DeviceService
+	service *DeviceService
 }
 
 func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request) {
