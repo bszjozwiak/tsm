@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
 	"log"
-	"sync"
+	"strconv"
+	"time"
 )
 
 type Measurement struct {
@@ -11,44 +15,24 @@ type Measurement struct {
 }
 
 type MeasurementsWriter struct {
-	mu           sync.Mutex
 	measurements <-chan Measurement
-	stop         chan bool
-	isRunning    bool
+	writeAPI     api.WriteAPIBlocking
 }
 
-func (mw *MeasurementsWriter) Start() {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
-
-	if mw.isRunning {
-		log.Println("measurements writer started already")
-		return
-	}
-
-	mw.stop = make(chan bool)
-	mw.isRunning = true
-
+func (mw *MeasurementsWriter) AsyncStart() {
 	go func() {
 		for {
 			select {
 			case measurement := <-mw.measurements:
-				log.Printf("measurement device: %v value: %v", measurement.Id, measurement.Value)
-			case <-mw.stop:
-				log.Println("measurements writing stopped")
-				return
+				point := influxdb2.NewPointWithMeasurement("deviceValues").
+					AddTag("deviceId", strconv.Itoa(measurement.Id)).
+					AddField("value", measurement.Value).
+					SetTime(time.Now().Round(time.Second))
+
+				if err := mw.writeAPI.WritePoint(context.Background(), point); err != nil {
+					log.Print(err)
+				}
 			}
 		}
 	}()
-}
-
-func (mw *MeasurementsWriter) Stop() {
-	mw.mu.Lock()
-	defer mw.mu.Unlock()
-
-	if mw.isRunning {
-		log.Println("stopping write measurements")
-		close(mw.stop)
-		mw.isRunning = false
-	}
 }
