@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"github.com/gorilla/mux"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
 	"os"
@@ -14,8 +17,16 @@ func main() {
 	mw := MeasurementsWriter{measurements: measurements, writeAPI: client.WriteAPIBlocking("tsm", "mydb")}
 	go mw.Start()
 
+	m, err := mongo.Connect(context.Background(), options.Client().ApplyURI(os.Getenv("TSM_MONGO_URI")))
+	if err != nil {
+		panic(err)
+	}
+
 	myRouter := mux.NewRouter().StrictSlash(true)
-	deviceService := DeviceService{dao: &inMemoryDeviceDAO{}}
+
+	devices := m.Database("tsm").Collection("devices")
+	dao := mongoDeviceDAO{devices: devices}
+	deviceService := DeviceService{dao: &dao}
 
 	deviceHandler := deviceHTTPHandler{service: &deviceService}
 	myRouter.HandleFunc("/devices", deviceHandler.createDevice).Methods(http.MethodPost)

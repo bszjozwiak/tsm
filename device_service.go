@@ -14,10 +14,10 @@ const (
 )
 
 type Device struct {
-	Id       int     `json:"id"`
-	Name     string  `json:"name"`
-	Interval int     `json:"interval"`
-	Value    float64 `json:"value"`
+	Id       int     `json:"id" bson:"id"`
+	Name     string  `json:"name" bson:"name"`
+	Interval int     `json:"interval" bson:"interval"`
+	Value    float64 `json:"value" bson:"value"`
 }
 
 type deviceDAO interface {
