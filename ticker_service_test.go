@@ -15,7 +15,11 @@ func TestTickerService_Start_SendDeviceMeasurement(t *testing.T) {
 	measurements := make(chan Measurement)
 	sendTrigger := make(chan time.Time)
 
-	underTest := TickerService{ds: &ds, measurements: measurements, tf: func(d time.Duration) <-chan time.Time { return sendTrigger }}
+	underTest := TickerService{
+		ds:        &ds,
+		publisher: func(id string, value float64) error { measurements <- Measurement{Id: id, Value: value}; return nil },
+		tf:        func(d time.Duration) <-chan time.Time { return sendTrigger },
+	}
 	defer underTest.Stop()
 
 	_ = underTest.Start(context.Background())

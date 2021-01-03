@@ -11,8 +11,8 @@ type tickerHTTPHandler struct {
 	ts *TickerService
 }
 
-func newTickerHTTPHandler(ds *DeviceService, measurements chan<- Measurement) tickerHTTPHandler {
-	ts := TickerService{ds: ds, measurements: measurements, tf: time.Tick}
+func newTickerHTTPHandler(ds *DeviceService, publisher measurementPublisher) tickerHTTPHandler {
+	ts := TickerService{ds: ds, publisher: publisher, tf: time.Tick}
 	ds.AddObserver(&ts)
 
 	return tickerHTTPHandler{ts: &ts}
