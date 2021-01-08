@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -9,7 +10,7 @@ import (
 func TestInMemoryDeviceDAO_GetPaging_NegativeLimitPassed(t *testing.T) {
 	underTest := inMemoryDeviceDAO{}
 
-	devices, err := underTest.GetAll(-1, 0)
+	devices, err := underTest.GetAll(context.Background(), -1, 0)
 
 	assert.Nil(t, devices)
 	assert.Error(t, err)
@@ -63,7 +64,7 @@ func TestInMemoryDeviceDAO_GetPaging(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(fmt.Sprintf("limit:%v page:%v", testCase.limit, testCase.page), func(t *testing.T) {
-			result, _ := underTest.GetAll(testCase.limit, testCase.page)
+			result, _ := underTest.GetAll(context.Background(), testCase.limit, testCase.page)
 			assert.ElementsMatch(t, testCase.expected, result)
 		})
 	}

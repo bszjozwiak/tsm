@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"sync"
@@ -18,7 +19,7 @@ type TickerService struct {
 	isRunning    bool
 }
 
-func (ts *TickerService) Start() error {
+func (ts *TickerService) Start(ctx context.Context) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -27,7 +28,7 @@ func (ts *TickerService) Start() error {
 		return nil
 	}
 
-	devices, err := ts.ds.GetAll(0, 0)
+	devices, err := ts.ds.GetAll(ctx, 0, 0)
 	if err != nil {
 		log.Print(err)
 		return errors.New("failed to start measurements sending")

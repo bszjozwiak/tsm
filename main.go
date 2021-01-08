@@ -24,8 +24,8 @@ func main() {
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 
-	devices := m.Database("tsm").Collection("devices")
-	dao := mongoDeviceDAO{devices: devices}
+	mongodb := m.Database("tsm")
+	dao := mongoDeviceDAO{db: mongodb}
 	deviceService := DeviceService{dao: &dao}
 
 	deviceHandler := deviceHTTPHandler{service: &deviceService}

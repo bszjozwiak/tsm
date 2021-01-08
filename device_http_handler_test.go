@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -81,7 +82,7 @@ func TestGetByIDDeviceExists(t *testing.T) {
 	res := httptest.NewRecorder()
 	device := Device{Id: 0, Name: "device", Interval: 1, Value: 1}
 	dao := inMemoryDeviceDAO{}
-	_, _ = dao.Save(device)
+	_, _ = dao.Save(context.Background(), device)
 	underTest := deviceHTTPHandler{service: &DeviceService{dao: &dao}}
 
 	underTest.getByID(res, req)
@@ -174,14 +175,14 @@ func TestGetAllReturnRequestedDevices(t *testing.T) {
 type failingDeviceDAO struct {
 }
 
-func (db *failingDeviceDAO) Save(device Device) (Device, error) {
+func (db *failingDeviceDAO) Save(_ context.Context, device Device) (Device, error) {
 	return device, errors.New("mock error - failed to create device")
 }
 
-func (db *failingDeviceDAO) GetByID(_ int) (*Device, error) {
+func (db *failingDeviceDAO) GetByID(_ context.Context, _ int) (*Device, error) {
 	return nil, errors.New(fmt.Sprintf("mock error - failed to get device by id"))
 }
 
-func (db *failingDeviceDAO) GetAll(_ int, _ int) ([]Device, error) {
+func (db *failingDeviceDAO) GetAll(_ context.Context, _ int, _ int) ([]Device, error) {
 	return nil, errors.New(fmt.Sprintf("mock error - failed to get all devices"))
 }

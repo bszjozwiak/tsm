@@ -5,35 +5,38 @@ import (
 	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type mongoDeviceDAO struct {
-	devices *mongo.Collection
+	db *mongo.Database
 }
 
-func (dao *mongoDeviceDAO) Save(device Device) (Device, error) {
-	countDocuments, err := dao.devices.CountDocuments(context.Background(), bson.M{})
+func (dao *mongoDeviceDAO) Save(ctx context.Context, device Device) (Device, error) {
+	devices := dao.db.Collection("devices")
+	countDocuments, err := devices.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return Device{}, err
 	}
 
 	device.Id = int(countDocuments)
-	insertResult, err := dao.devices.InsertOne(context.Background(), device)
+	insertResult, err := devices.InsertOne(ctx, device)
 	if err != nil {
 		return device, err
 	}
 
 	var result Device
-	if err = dao.devices.FindOne(context.Background(), bson.M{"_id": insertResult.InsertedID}).Decode(&result); err != nil {
+	if err = devices.FindOne(ctx, bson.M{"_id": insertResult.InsertedID}).Decode(&result); err != nil {
 		return Device{}, err
 	}
 
 	return result, nil
 }
 
-func (dao *mongoDeviceDAO) GetByID(id int) (*Device, error) {
+func (dao *mongoDeviceDAO) GetByID(ctx context.Context, id int) (*Device, error) {
 	var result Device
-	if err := dao.devices.FindOne(context.Background(), bson.M{"id": id}).Decode(&result); err != nil {
+	devices := dao.db.Collection("devices")
+	if err := devices.FindOne(ctx, bson.M{"id": id}).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -44,35 +47,34 @@ func (dao *mongoDeviceDAO) GetByID(id int) (*Device, error) {
 	return &result, nil
 }
 
-func (dao *mongoDeviceDAO) GetAll(limit int, page int) ([]Device, error) {
+func (dao *mongoDeviceDAO) GetAll(ctx context.Context, limit int, page int) ([]Device, error) {
 	if limit < 0 {
 		return nil, errors.New("limit can't be negative")
 	}
 
 	var filter bson.M
 
-	if limit == 0 {
-		filter = bson.M{}
-	} else {
-		start := limit * page
-		end := start + limit
-		filter = bson.M{"id": bson.M{"$gte": start, "$lt": end}}
+	opts := &options.FindOptions{}
+	if limit > 0 {
+		opts.SetSkip(int64(limit * page)).
+			SetLimit(int64(limit))
 	}
 
-	find, err := dao.devices.Find(context.Background(), filter)
+	devices := dao.db.Collection("devices")
+	find, err := devices.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	devices := make([]Device, 0)
-	for find.Next(context.Background()) {
+	result := make([]Device, 0)
+	for find.Next(ctx) {
 		var dev Device
 		if err = find.Decode(&dev); err != nil {
 			return nil, err
 		}
 
-		devices = append(devices, dev)
+		result = append(result, dev)
 	}
 
-	return devices, nil
+	return result, nil
 }

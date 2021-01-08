@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"sync"
 )
@@ -10,7 +11,7 @@ type inMemoryDeviceDAO struct {
 	devices []Device
 }
 
-func (db *inMemoryDeviceDAO) Save(device Device) (Device, error) {
+func (db *inMemoryDeviceDAO) Save(_ context.Context, device Device) (Device, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -20,7 +21,7 @@ func (db *inMemoryDeviceDAO) Save(device Device) (Device, error) {
 	return device, nil
 }
 
-func (db *inMemoryDeviceDAO) GetByID(id int) (*Device, error) {
+func (db *inMemoryDeviceDAO) GetByID(_ context.Context, id int) (*Device, error) {
 	if len(db.devices) > id {
 		device := db.devices[id]
 		return &device, nil
@@ -29,7 +30,7 @@ func (db *inMemoryDeviceDAO) GetByID(id int) (*Device, error) {
 	return nil, nil
 }
 
-func (db *inMemoryDeviceDAO) GetAll(limit int, page int) ([]Device, error) {
+func (db *inMemoryDeviceDAO) GetAll(_ context.Context, limit int, page int) ([]Device, error) {
 	if limit < 0 {
 		return nil, errors.New("limit can't be negative")
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ func TestTickerService_Start_SendDeviceMeasurement(t *testing.T) {
 	underTest := TickerService{ds: &ds, measurements: measurements, tf: func(d time.Duration) <-chan time.Time { return sendTrigger }}
 	defer underTest.Stop()
 
-	_ = underTest.Start()
+	_ = underTest.Start(context.Background())
 	sendTrigger <- time.Time{}
 	result := <-measurements
 

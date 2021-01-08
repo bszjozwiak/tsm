@@ -18,8 +18,8 @@ func newTickerHTTPHandler(ds *DeviceService, measurements chan<- Measurement) ti
 	return tickerHTTPHandler{ts: &ts}
 }
 
-func (h *tickerHTTPHandler) Start(w http.ResponseWriter, _ *http.Request) {
-	if err := h.ts.Start(); err != nil {
+func (h *tickerHTTPHandler) Start(w http.ResponseWriter, r *http.Request) {
+	if err := h.ts.Start(r.Context()); err != nil {
 		log.Print(err)
 		http.Error(w, "failed to start ticker", http.StatusInternalServerError)
 		return
