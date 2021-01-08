@@ -1,0 +1,51 @@
+version: '3'
+services:
+  tsm-mongo-db:
+    image: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - tsm
+
+  tsm-rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+    networks:
+      - tsm
+
+  tsm-influxdb:
+    image: quay.io/influxdb/influxdb:v2.0.3
+    ports:
+      - "8086:8086"
+    networks:
+      - tsm
+
+  tsm-influxdb-cli:
+    links:
+      - tsm-influxdb
+    image: quay.io/influxdb/influxdb:v2.0.3
+    entrypoint: influx setup --bucket=mydb --org=tsm --username=admin --password=12345678 --token=oFrFzyGtM7FK0-DNkdqIAPjr4Axi3wsB2-xk8gXjR73M3oTcqUvlQflfAUvaycvf3dEyxb-LihgzoRnd8vVmDw== --host=http://tsm-influxdb:8086 -f
+    restart: on-failure:10
+    depends_on:
+      - tsm-influxdb
+    networks:
+      - tsm
+
+  tsm-app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - TSM_INFLUX_URL=http://tsm-influxdb:8086
+      - TSM_INFLUX_TOKEN=oFrFzyGtM7FK0-DNkdqIAPjr4Axi3wsB2-xk8gXjR73M3oTcqUvlQflfAUvaycvf3dEyxb-LihgzoRnd8vVmDw==
+      - TSM_PORT=8000
+      - TSM_MONGO_URI=mongodb://tsm-mongo-db:27017
+      - TSM_RABBITMQ_URL=amqp://guest:guest@tsm-rabbitmq:5672/
+    networks:
+      - tsm
+    restart: on-failure
+
+networks:
+  tsm:
+    driver: bridge
