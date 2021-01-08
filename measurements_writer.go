@@ -19,20 +19,15 @@ type MeasurementsWriter struct {
 	writeAPI     api.WriteAPIBlocking
 }
 
-func (mw *MeasurementsWriter) AsyncStart() {
-	go func() {
-		for {
-			select {
-			case measurement := <-mw.measurements:
-				point := influxdb2.NewPointWithMeasurement("deviceValues").
-					AddTag("deviceId", strconv.Itoa(measurement.Id)).
-					AddField("value", measurement.Value).
-					SetTime(time.Now().Round(time.Second))
+func (mw *MeasurementsWriter) Start() {
+	for measurement := range mw.measurements {
+		point := influxdb2.NewPointWithMeasurement("deviceValues").
+			AddTag("deviceId", strconv.Itoa(measurement.Id)).
+			AddField("value", measurement.Value).
+			SetTime(time.Now().Round(time.Second))
 
-				if err := mw.writeAPI.WritePoint(context.Background(), point); err != nil {
-					log.Print(err)
-				}
-			}
+		if err := mw.writeAPI.WritePoint(context.Background(), point); err != nil {
+			log.Print(err)
 		}
-	}()
+	}
 }

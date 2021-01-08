@@ -12,7 +12,7 @@ func main() {
 	measurements := make(chan Measurement, 10)
 	client := influxdb2.NewClient(os.Getenv("TSM_INFLUX_URL"), os.Getenv("TSM_INFLUX_TOKEN"))
 	mw := MeasurementsWriter{measurements: measurements, writeAPI: client.WriteAPIBlocking("tsm", "mydb")}
-	mw.AsyncStart()
+	go mw.Start()
 
 	myRouter := mux.NewRouter().StrictSlash(true)
 	deviceService := DeviceService{dao: &inMemoryDeviceDAO{}}
