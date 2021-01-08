@@ -9,18 +9,13 @@ import (
 
 type tickerHTTPHandler struct {
 	ts *TickerService
-	mw *MeasurementsWriter
 }
 
-func newTickerHTTPHandler(ds *DeviceService) tickerHTTPHandler {
-	measurements := make(chan Measurement, 10)
-
+func newTickerHTTPHandler(ds *DeviceService, measurements chan<- Measurement) tickerHTTPHandler {
 	ts := TickerService{ds: ds, measurements: measurements, tf: time.Tick}
 	ds.AddObserver(&ts)
 
-	mw := MeasurementsWriter{measurements: measurements}
-
-	return tickerHTTPHandler{ts: &ts, mw: &mw}
+	return tickerHTTPHandler{ts: &ts}
 }
 
 func (h *tickerHTTPHandler) Start(w http.ResponseWriter, _ *http.Request) {
@@ -29,8 +24,6 @@ func (h *tickerHTTPHandler) Start(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "failed to start ticker", http.StatusInternalServerError)
 		return
 	}
-
-	h.mw.Start()
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode("ticker started"); err != nil {
@@ -41,7 +34,6 @@ func (h *tickerHTTPHandler) Start(w http.ResponseWriter, _ *http.Request) {
 
 func (h *tickerHTTPHandler) Stop(w http.ResponseWriter, _ *http.Request) {
 	h.ts.Stop()
-	h.mw.Stop()
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode("ticker stopped"); err != nil {
