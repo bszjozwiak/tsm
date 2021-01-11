@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 )
 
@@ -15,15 +16,15 @@ const (
 )
 
 type Device struct {
-	Id       int     `json:"id" bson:"id"`
-	Name     string  `json:"name" bson:"name"`
-	Interval int     `json:"interval" bson:"interval"`
-	Value    float64 `json:"value" bson:"value"`
+	ID       primitive.ObjectID `json:"id" bson:"_id"`
+	Name     string             `json:"name" bson:"name"`
+	Interval int                `json:"interval" bson:"interval"`
+	Value    float64            `json:"value" bson:"value"`
 }
 
 type deviceDAO interface {
 	Save(ctx context.Context, device Device) (Device, error)
-	GetByID(ctx context.Context, id int) (*Device, error)
+	GetByID(ctx context.Context, id string) (*Device, error)
 	GetAll(ctx context.Context, limit int, page int) ([]Device, error)
 }
 
@@ -70,7 +71,7 @@ func (s *DeviceService) validate(device Device) error {
 	return nil
 }
 
-func (s *DeviceService) GetByID(ctx context.Context, id int) (*Device, error) {
+func (s *DeviceService) GetByID(ctx context.Context, id string) (*Device, error) {
 	device, err := s.dao.GetByID(ctx, id)
 	if err != nil {
 		log.Print(err)

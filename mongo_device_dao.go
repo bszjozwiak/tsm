@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -14,12 +15,7 @@ type mongoDeviceDAO struct {
 
 func (dao *mongoDeviceDAO) Save(ctx context.Context, device Device) (Device, error) {
 	devices := dao.db.Collection("devices")
-	countDocuments, err := devices.CountDocuments(ctx, bson.M{})
-	if err != nil {
-		return Device{}, err
-	}
-
-	device.Id = int(countDocuments)
+	device.ID = primitive.NewObjectID()
 	insertResult, err := devices.InsertOne(ctx, device)
 	if err != nil {
 		return device, err
@@ -33,10 +29,16 @@ func (dao *mongoDeviceDAO) Save(ctx context.Context, device Device) (Device, err
 	return result, nil
 }
 
-func (dao *mongoDeviceDAO) GetByID(ctx context.Context, id int) (*Device, error) {
+func (dao *mongoDeviceDAO) GetByID(ctx context.Context, id string) (*Device, error) {
 	var result Device
 	devices := dao.db.Collection("devices")
-	if err := devices.FindOne(ctx, bson.M{"id": id}).Decode(&result); err != nil {
+
+	searchId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := devices.FindOne(ctx, bson.M{"_id": searchId}).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}

@@ -50,7 +50,7 @@ func TestCreateValidDeviceButErrorWhenSavingByDAO(t *testing.T) {
 func TestGetByIDErrorInDAO(t *testing.T) {
 	underTest := DeviceService{dao: &failingDeviceDAO{}}
 
-	_, err := underTest.GetByID(context.Background(), 1)
+	_, err := underTest.GetByID(context.Background(), "1")
 
 	assert.Error(t, err, "The error should be return when DAO fails")
 	assert.EqualError(t, err, daoGetErr)

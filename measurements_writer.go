@@ -5,12 +5,11 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"log"
-	"strconv"
 	"time"
 )
 
 type Measurement struct {
-	Id    int
+	Id    string
 	Value float64
 }
 
@@ -22,7 +21,7 @@ type MeasurementsWriter struct {
 func (mw *MeasurementsWriter) Start() {
 	for measurement := range mw.measurements {
 		point := influxdb2.NewPointWithMeasurement("deviceValues").
-			AddTag("deviceId", strconv.Itoa(measurement.Id)).
+			AddTag("deviceId", measurement.Id).
 			AddField("value", measurement.Value).
 			SetTime(time.Now().Round(time.Second))
 

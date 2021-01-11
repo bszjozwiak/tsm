@@ -45,13 +45,7 @@ func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *deviceHTTPHandler) getByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		log.Print(err)
-		http.Error(w, "device id must be a number", http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	device, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
