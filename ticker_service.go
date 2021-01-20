@@ -9,14 +9,15 @@ import (
 )
 
 type tickerFactory func(d time.Duration) <-chan time.Time
+type measurementPublisher func(id string, value float64) error
 
 type TickerService struct {
-	mu           sync.Mutex
-	ds           *DeviceService
-	tf           tickerFactory
-	measurements chan<- Measurement
-	stop         chan bool
-	isRunning    bool
+	mu        sync.Mutex
+	ds        *DeviceService
+	tf        tickerFactory
+	publisher measurementPublisher
+	stop      chan bool
+	isRunning bool
 }
 
 func (ts *TickerService) Start(ctx context.Context) error {
@@ -76,7 +77,9 @@ func (ts *TickerService) createTickerForDevice(device Device) {
 	for {
 		select {
 		case <-sendTrigger:
-			ts.measurements <- Measurement{Id: device.ID.Hex(), Value: device.Value}
+			if err := ts.publisher(device.ID.Hex(), device.Value); err != nil {
+				log.Print(err)
+			}
 		case <-ts.stop:
 			log.Printf("measurements sending from device %v stopped", device.ID)
 			return

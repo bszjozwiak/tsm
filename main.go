@@ -12,10 +12,17 @@ import (
 )
 
 func main() {
-	measurements := make(chan Measurement, 10)
+	rabbit, err := newRabbitMQMeasurementExchanger(os.Getenv("TSM_RABBITMQ_URL"))
+	if err != nil {
+		panic(err)
+	}
+
 	client := influxdb2.NewClient(os.Getenv("TSM_INFLUX_URL"), os.Getenv("TSM_INFLUX_TOKEN"))
-	mw := MeasurementsWriter{measurements: measurements, writeAPI: client.WriteAPIBlocking("tsm", "mydb")}
-	go mw.Start()
+	mw := MeasurementsWriter{rf: rabbit.CreateReceiver, writeAPI: client.WriteAPIBlocking("tsm", "mydb")}
+
+	if err = mw.AsyncStart(); err != nil {
+		panic(err)
+	}
 
 	m, err := mongo.Connect(context.Background(), options.Client().ApplyURI(os.Getenv("TSM_MONGO_URI")))
 	if err != nil {
@@ -33,7 +40,7 @@ func main() {
 	myRouter.HandleFunc("/devices/{id}", deviceHandler.getByID).Methods(http.MethodGet)
 	myRouter.HandleFunc("/devices", deviceHandler.getAll).Methods(http.MethodGet)
 
-	tickerHandler := newTickerHTTPHandler(&deviceService, measurements)
+	tickerHandler := newTickerHTTPHandler(&deviceService, rabbit.Publish)
 	myRouter.HandleFunc("/start", tickerHandler.Start).Methods(http.MethodPost)
 	myRouter.HandleFunc("/stop", tickerHandler.Stop).Methods(http.MethodPost)
 
