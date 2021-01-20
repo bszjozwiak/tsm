@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"testing"
 )
 
 func TestInMemoryDeviceDAO_GetPaging_NegativeLimitPassed(t *testing.T) {
 	underTest := inMemoryDeviceDAO{}
 
-	devices, err := underTest.GetAll(-1, 0)
+	devices, err := underTest.GetAll(context.Background(), -1, 0)
 
 	assert.Nil(t, devices)
 	assert.Error(t, err)
@@ -17,16 +19,16 @@ func TestInMemoryDeviceDAO_GetPaging_NegativeLimitPassed(t *testing.T) {
 
 func TestInMemoryDeviceDAO_GetPaging(t *testing.T) {
 	devices := []Device{
-		{Id: 0, Name: "0"},
-		{Id: 1, Name: "1"},
-		{Id: 2, Name: "2"},
-		{Id: 3, Name: "3"},
-		{Id: 4, Name: "4"},
-		{Id: 5, Name: "5"},
-		{Id: 6, Name: "6"},
-		{Id: 7, Name: "7"},
-		{Id: 8, Name: "8"},
-		{Id: 9, Name: "9"},
+		{ID: primitive.NewObjectID(), Name: "0"},
+		{ID: primitive.NewObjectID(), Name: "1"},
+		{ID: primitive.NewObjectID(), Name: "2"},
+		{ID: primitive.NewObjectID(), Name: "3"},
+		{ID: primitive.NewObjectID(), Name: "4"},
+		{ID: primitive.NewObjectID(), Name: "5"},
+		{ID: primitive.NewObjectID(), Name: "6"},
+		{ID: primitive.NewObjectID(), Name: "7"},
+		{ID: primitive.NewObjectID(), Name: "8"},
+		{ID: primitive.NewObjectID(), Name: "9"},
 	}
 
 	testCases := []struct {
@@ -63,7 +65,7 @@ func TestInMemoryDeviceDAO_GetPaging(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(fmt.Sprintf("limit:%v page:%v", testCase.limit, testCase.page), func(t *testing.T) {
-			result, _ := underTest.GetAll(testCase.limit, testCase.page)
+			result, _ := underTest.GetAll(context.Background(), testCase.limit, testCase.page)
 			assert.ElementsMatch(t, testCase.expected, result)
 		})
 	}

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -10,26 +12,28 @@ type inMemoryDeviceDAO struct {
 	devices []Device
 }
 
-func (db *inMemoryDeviceDAO) Save(device Device) (Device, error) {
+func (db *inMemoryDeviceDAO) Save(_ context.Context, device Device) (Device, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	device.Id = len(db.devices)
 	db.devices = append(db.devices, device)
 
 	return device, nil
 }
 
-func (db *inMemoryDeviceDAO) GetByID(id int) (*Device, error) {
-	if len(db.devices) > id {
-		device := db.devices[id]
-		return &device, nil
+func (db *inMemoryDeviceDAO) GetByID(_ context.Context, id string) (*Device, error) {
+	for _, device := range db.devices {
+		if searchID, err := primitive.ObjectIDFromHex(id); err != nil {
+			return nil, err
+		} else if device.ID == searchID {
+			return &device, nil
+		}
 	}
 
 	return nil, nil
 }
 
-func (db *inMemoryDeviceDAO) GetAll(limit int, page int) ([]Device, error) {
+func (db *inMemoryDeviceDAO) GetAll(_ context.Context, limit int, page int) ([]Device, error) {
 	if limit < 0 {
 		return nil, errors.New("limit can't be negative")
 	}

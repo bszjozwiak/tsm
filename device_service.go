@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 )
 
@@ -14,16 +16,16 @@ const (
 )
 
 type Device struct {
-	Id       int     `json:"id"`
-	Name     string  `json:"name"`
-	Interval int     `json:"interval"`
-	Value    float64 `json:"value"`
+	ID       primitive.ObjectID `json:"id" bson:"_id"`
+	Name     string             `json:"name" bson:"name"`
+	Interval int                `json:"interval" bson:"interval"`
+	Value    float64            `json:"value" bson:"value"`
 }
 
 type deviceDAO interface {
-	Save(device Device) (Device, error)
-	GetByID(id int) (*Device, error)
-	GetAll(limit int, page int) ([]Device, error)
+	Save(ctx context.Context, device Device) (Device, error)
+	GetByID(ctx context.Context, id string) (*Device, error)
+	GetAll(ctx context.Context, limit int, page int) ([]Device, error)
 }
 
 type DeviceCreateObserver interface {
@@ -39,12 +41,12 @@ func (s *DeviceService) AddObserver(observer DeviceCreateObserver) {
 	s.observers = append(s.observers, observer)
 }
 
-func (s *DeviceService) CreateDevice(device Device) (Device, error) {
+func (s *DeviceService) CreateDevice(ctx context.Context, device Device) (Device, error) {
 	if err := s.validate(device); err != nil {
 		return device, err
 	}
 
-	savedDevice, err := s.dao.Save(device)
+	savedDevice, err := s.dao.Save(ctx, device)
 	if err != nil {
 		log.Print(err)
 		return device, errors.New(daoSaveErr)
@@ -69,8 +71,8 @@ func (s *DeviceService) validate(device Device) error {
 	return nil
 }
 
-func (s *DeviceService) GetByID(id int) (*Device, error) {
-	device, err := s.dao.GetByID(id)
+func (s *DeviceService) GetByID(ctx context.Context, id string) (*Device, error) {
+	device, err := s.dao.GetByID(ctx, id)
 	if err != nil {
 		log.Print(err)
 		return nil, errors.New(daoGetErr)
@@ -79,8 +81,8 @@ func (s *DeviceService) GetByID(id int) (*Device, error) {
 	return device, nil
 }
 
-func (s *DeviceService) GetAll(limit int, page int) ([]Device, error) {
-	devices, err := s.dao.GetAll(limit, page)
+func (s *DeviceService) GetAll(ctx context.Context, limit int, page int) ([]Device, error) {
+	devices, err := s.dao.GetAll(ctx, limit, page)
 	if err != nil {
 		log.Print(err)
 		return nil, errors.New(daoGetAllErr)

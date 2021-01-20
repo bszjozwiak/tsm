@@ -22,7 +22,7 @@ func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	createdDevice, err := h.service.CreateDevice(requestDevice)
+	createdDevice, err := h.service.CreateDevice(r.Context(), requestDevice)
 	if err != nil {
 		log.Print(err)
 		switch err.Error() {
@@ -45,15 +45,9 @@ func (h *deviceHTTPHandler) createDevice(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *deviceHTTPHandler) getByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		log.Print(err)
-		http.Error(w, "device id must be a number", http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
-	device, err := h.service.GetByID(id)
+	device, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -94,7 +88,7 @@ func (h *deviceHTTPHandler) getAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	devices, err := h.service.GetAll(limit, page)
+	devices, err := h.service.GetAll(r.Context(), limit, page)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

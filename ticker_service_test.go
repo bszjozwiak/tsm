@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"testing"
 	"time"
 )
 
 func TestTickerService_Start_SendDeviceMeasurement(t *testing.T) {
-	dao := inMemoryDeviceDAO{devices: []Device{{Id: 0, Interval: 1, Value: 5}}}
+	id := primitive.NewObjectID()
+	dao := inMemoryDeviceDAO{devices: []Device{{ID: id, Interval: 1, Value: 5}}}
 	ds := DeviceService{dao: &dao}
 	measurements := make(chan Measurement)
 	sendTrigger := make(chan time.Time)
@@ -15,9 +18,9 @@ func TestTickerService_Start_SendDeviceMeasurement(t *testing.T) {
 	underTest := TickerService{ds: &ds, measurements: measurements, tf: func(d time.Duration) <-chan time.Time { return sendTrigger }}
 	defer underTest.Stop()
 
-	_ = underTest.Start()
+	_ = underTest.Start(context.Background())
 	sendTrigger <- time.Time{}
 	result := <-measurements
 
-	assert.Equal(t, Measurement{Id: 0, Value: 5}, result)
+	assert.Equal(t, Measurement{Id: id.Hex(), Value: 5}, result)
 }

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,7 +15,8 @@ import (
 )
 
 func TestCreateValidDeviceWithNoDatabaseErrors(t *testing.T) {
-	body := strings.NewReader(`{"name":"test name2","interval":1}`)
+	id := primitive.NewObjectID()
+	body := strings.NewReader(fmt.Sprintf(`{"id":"%v","name":"test name2","interval":1}`, id.Hex()))
 	req := httptest.NewRequest(http.MethodPost, "/devices", body)
 	res := httptest.NewRecorder()
 	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
@@ -21,7 +24,7 @@ func TestCreateValidDeviceWithNoDatabaseErrors(t *testing.T) {
 	underTest.createDevice(res, req)
 
 	assert.Equal(t, http.StatusCreated, res.Code)
-	require.JSONEq(t, `{"id":0,"name":"test name2","interval":1,"value":0}`, res.Body.String())
+	require.JSONEq(t, fmt.Sprintf(`{"id":"%v","name":"test name2","interval":1,"value":0}`, id.Hex()), res.Body.String())
 }
 
 func TestCreateInvalidDevice(t *testing.T) {
@@ -46,16 +49,6 @@ func TestCreateValidDeviceButErrorWhenSaveInDatabase(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, res.Code)
 }
 
-func TestGetByIDStringPassedInsteadOfNumber(t *testing.T) {
-	req := createGetDeviceRequest("string")
-	res := httptest.NewRecorder()
-	underTest := deviceHTTPHandler{service: &DeviceService{dao: &inMemoryDeviceDAO{}}}
-
-	underTest.getByID(res, req)
-
-	assert.Equal(t, http.StatusBadRequest, res.Code)
-}
-
 func TestGetByIDDatabaseError(t *testing.T) {
 	req := createGetDeviceRequest("0")
 	res := httptest.NewRecorder()
@@ -77,17 +70,18 @@ func TestGetByIdDeviceNotFound(t *testing.T) {
 }
 
 func TestGetByIDDeviceExists(t *testing.T) {
-	req := createGetDeviceRequest("0")
+	id := primitive.NewObjectID()
+	req := createGetDeviceRequest(id.Hex())
 	res := httptest.NewRecorder()
-	device := Device{Id: 0, Name: "device", Interval: 1, Value: 1}
+	device := Device{ID: id, Name: "device", Interval: 1, Value: 1}
 	dao := inMemoryDeviceDAO{}
-	_, _ = dao.Save(device)
+	_, _ = dao.Save(context.Background(), device)
 	underTest := deviceHTTPHandler{service: &DeviceService{dao: &dao}}
 
 	underTest.getByID(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	require.JSONEq(t, `{"id":0,"name":"device","interval":1,"value":1}`, res.Body.String())
+	require.JSONEq(t, fmt.Sprintf(`{"id":"%v","name":"device","interval":1,"value":1}`, id.Hex()), res.Body.String())
 }
 
 func createGetDeviceRequest(id string) *http.Request {
@@ -148,11 +142,11 @@ func TestGetAllNoDevicesReturnEmptyList(t *testing.T) {
 
 func TestGetAllReturnRequestedDevices(t *testing.T) {
 	devices := []Device{
-		{Id: 0, Name: "device 1", Interval: 1, Value: 11},
-		{Id: 1, Name: "device 2", Interval: 2, Value: 12},
-		{Id: 2, Name: "device 3", Interval: 3, Value: 13},
-		{Id: 3, Name: "device 4", Interval: 4, Value: 14},
-		{Id: 4, Name: "device 5", Interval: 5, Value: 15},
+		{Name: "device 1", Interval: 1, Value: 11},
+		{Name: "device 2", Interval: 2, Value: 12},
+		{Name: "device 3", Interval: 3, Value: 13},
+		{Name: "device 4", Interval: 4, Value: 14},
+		{Name: "device 5", Interval: 5, Value: 15},
 	}
 	dao := inMemoryDeviceDAO{devices: append([]Device(nil), devices...)}
 
@@ -168,20 +162,20 @@ func TestGetAllReturnRequestedDevices(t *testing.T) {
 	underTest.getAll(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	require.JSONEq(t, `[{"id":2,"name":"device 3","interval":3,"value":13},{"id":3,"name":"device 4","interval":4,"value":14}]`, res.Body.String())
+	require.JSONEq(t, fmt.Sprintf(`[{"id":"%[1]v","name":"device 3","interval":3,"value":13},{"id":"%[1]v","name":"device 4","interval":4,"value":14}]`, primitive.NilObjectID.Hex()), res.Body.String())
 }
 
 type failingDeviceDAO struct {
 }
 
-func (db *failingDeviceDAO) Save(device Device) (Device, error) {
+func (db *failingDeviceDAO) Save(_ context.Context, device Device) (Device, error) {
 	return device, errors.New("mock error - failed to create device")
 }
 
-func (db *failingDeviceDAO) GetByID(_ int) (*Device, error) {
+func (db *failingDeviceDAO) GetByID(_ context.Context, _ string) (*Device, error) {
 	return nil, errors.New(fmt.Sprintf("mock error - failed to get device by id"))
 }
 
-func (db *failingDeviceDAO) GetAll(_ int, _ int) ([]Device, error) {
+func (db *failingDeviceDAO) GetAll(_ context.Context, _ int, _ int) ([]Device, error) {
 	return nil, errors.New(fmt.Sprintf("mock error - failed to get all devices"))
 }
