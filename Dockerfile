@@ -1,9 +1,8 @@
-FROM golang:1.15
-
+FROM golang:alpine AS builder
 WORKDIR /go/src/app
 COPY . .
+RUN go build .
 
-RUN go get -d -v ./...
-RUN go install -v ./...
-
-CMD ["tsm"]
+FROM alpine:latest
+COPY --from=builder /go/src/app/tsm .
+CMD ["./tsm"]

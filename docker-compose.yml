@@ -25,7 +25,7 @@ services:
     links:
       - tsm-influxdb
     image: quay.io/influxdb/influxdb:v2.0.3
-    entrypoint: influx setup --bucket=mydb --org=tsm --username=admin --password=12345678 --token=oFrFzyGtM7FK0-DNkdqIAPjr4Axi3wsB2-xk8gXjR73M3oTcqUvlQflfAUvaycvf3dEyxb-LihgzoRnd8vVmDw== --host=http://tsm-influxdb:8086 -f
+    entrypoint: influx setup --bucket=mydb --org=tsm --username=${INFLUX_USER} --password=${INFLUX_PASSWORD} --token=${INFLUX_TOKEN} --host=http://tsm-influxdb:8086 -f
     restart: on-failure:10
     depends_on:
       - tsm-influxdb
@@ -38,7 +38,7 @@ services:
       - "8000:8000"
     environment:
       - TSM_INFLUX_URL=http://tsm-influxdb:8086
-      - TSM_INFLUX_TOKEN=oFrFzyGtM7FK0-DNkdqIAPjr4Axi3wsB2-xk8gXjR73M3oTcqUvlQflfAUvaycvf3dEyxb-LihgzoRnd8vVmDw==
+      - TSM_INFLUX_TOKEN=${INFLUX_TOKEN}
       - TSM_PORT=8000
       - TSM_MONGO_URI=mongodb://tsm-mongo-db:27017
       - TSM_RABBITMQ_URL=amqp://guest:guest@tsm-rabbitmq:5672/
